@@ -12,7 +12,7 @@
 - **Language:** Python 3.10+ (Typed, `type: ignore` only where necessary).
 - **LLM Engine:** Ollama (Local only). No Cloud API calls allowed without explicit "Cloud Justification Report" in an ADR.
 - **Vector Store:** ChromaDB (In-Memory mode for this specific repo to ensure zero-dependency portability for portfolio reviews).
-- **Runtime:** Must run on `ai-lab` (Ryzen 7 / RTX Pro 4000) or dev-host hardware without OOM errors. Keep memory footprint < 2GB.
+- **Runtime:** Must run on standard consumer hardware (e.g., 8GB+ RAM, integrated graphics). Optimize inference calls to keep CPU/RAM usage low.
 
 ### 2. Coding Standards
 - **Linting:** `ruff check src/` (Target PEP 8 with type hints).
