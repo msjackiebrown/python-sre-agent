@@ -1,28 +1,45 @@
-# 🤖 Agent Governance for python-sre-agent
+# 🏗️ AGENTS.md - Governance & Development Standards
 
-This file governs how AI agents and developers interact with this repository.
+## Project: Python SRE Agent (Tool-Using Chatbot)
+**Goal:** Build a local-first AI assistant that uses Ollama Function Calling to interact with mocked infrastructure tools and a ChromaDB runbook knowledge base.
+**Status:** Phase 2 (Design & Architecture) → Phase 3 (Implementation)
 
-## 🧠 Project Context
-**Mission**: Build a local-first SRE Assistant that demonstrates "Tool Use" (Function Calling) + "RAG" using mock banking incident data.
-**Target User**: Solo Dev / Portfolio Showcase.
-**Infrastructure**: Runs locally against `ai-lab` server (RTX PRO 4000). Zero cloud egress allowed.
+---
 
-## 🛠️ Tech Stack & Rules
-*   **Language**: Python 3.12+
-*   **Linting/Formatting**: `ruff check src/` / `black src/`
-*   **Testing**: `pytest tests/` (Must cover tool execution logic).
-*   **Package Management**: Standard `requirements.txt`.
+## 🚧 Stack Rules & Standards
 
-## ⚠️ Hardware Constraints
-*   **RAM Limit**: Do not design vector stores requiring >16GB RAM. Use lightweight models for testing.
-*   **GPU Limit**: Inference tasks must respect the 24GB VRAM limit on `ai-lab`.
-*   **Storage**: Use in-memory ChromaDB instances for mock data to keep the repo "clean" (no massive local DB files in git).
+### 1. Tech Stack Constraints
+- **Language:** Python 3.10+ (Typed, `type: ignore` only where necessary).
+- **LLM Engine:** Ollama (Local only). No Cloud API calls allowed without explicit "Cloud Justification Report" in an ADR.
+- **Vector Store:** ChromaDB (In-Memory mode for this specific repo to ensure zero-dependency portability for portfolio reviews).
+- **Runtime:** Must run on `ai-lab` (Ryzen 7 / RTX Pro 4000) or dev-host hardware without OOM errors. Keep memory footprint < 2GB.
 
-## 📋 Process Gates (Phase 5: Development)
-1.  **Tool Definition First**: Before writing agent logic, define the JSON schema for tools in `prompts.py`.
-2.  **Mock Data Isolation**: All mock runbooks must live in `data/` and be loaded dynamically. No hardcoded text in the agent loop.
-3.  **Error Handling**: Every tool function must catch exceptions and return a "Tool Error" string to the LLM, never crash the Python process.
+### 2. Coding Standards
+- **Linting:** `ruff check src/` (Target PEP 8 with type hints).
+- **Testing:** `pytest tests/`. All tools must be unit-testable without a running LLM backend (mock the `ollama` client).
+- **Directory Structure:**
+    - `src/agent.py`: The core ReAct loop.
+    - `src/tools.py`: Pure functions that perform actions.
+    - `src/data/`: Mock runbooks and vector seeding logic.
 
-## 🚫 Forbidden Actions
-*   Do not commit local ChromaDB database files (`.chromadb/`, `chroma.sqlite3`).
-*   Do not use public cloud embedding models (e.g., OpenAI API). Use local Ollama embeddings only.
+### 3. Tool Calling Design
+- All tool schemas MUST match Ollama's expected JSON format.
+- **Error Handling:** Tools must catch exceptions (e.g., NetworkError) and return a structured string error to the LLM, allowing it to retry or explain failure, rather than crashing the agent loop.
+
+---
+
+## ⏱️ Phase Gates
+
+| Phase | Goal | Status |
+| :--- | :--- | :--- |
+| **Phase 1** | Governance & Repo Setup | ✅ Done |
+| **Phase 2** | Define Tool Schemas & Mock Data Schema | 🔄 In Progress |
+| **Phase 3** | Build Agent Loop (Ollama streaming + logic) | ⬜ Pending |
+| **Phase 4** | Integrate ChromaDB Runbook Search Tool | ⬜ Pending |
+| **Phase 5** | CI/CD, Testing & Documentation Polish | ⬜ Pending |
+
+---
+
+## 🛡️ Security & Compliance
+- **PII Policy:** No real banking data. Use clearly marked "FAKE" prefixes in mock runbooks (e.g., `INCIDENT-001`).
+- **Egress:** Strictly Local First. Even for this learning project, hardcode `http://localhost:11434` or env vars. Never point to external APIs.
