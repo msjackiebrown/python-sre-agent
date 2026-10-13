@@ -7,7 +7,7 @@ This project moves beyond basic LLM chatting by implementing a true **Tool-Using
 ---
 
 ## 🎯 Project Goals & Portfolio Value
-Built for the `ai-lab` local infrastructure, this project demonstrates three critical engineering skills:
+Designed to run entirely on your local machine with minimal dependencies (Python + Ollama), this project demonstrates three critical engineering skills:
 
 1.  **Tool Calling (Function Calling):** Implementing structured JSON schemas to let Ollama interact with Python code safely.
 2.  **Retrieval-Augmented Generation (RAG):** Using an ephemeral **ChromaDB** instance to search a localized Knowledge Base of incident runbooks.
@@ -26,7 +26,7 @@ Unlike a standard chatbot that just predicts the next word, this agent follows a
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Language** | Python 3.10+ | Core logic and tool orchestration |
-| **LLM Engine** | [Ollama](https://ollama.com/) | Local inference (e.g., `llama3`, `mistral`) |
+| **LLM Engine** | [Ollama](https://ollama.com/) | Local inference using lightweight models (e.g., `llama3`, `mistral`) |
 | **Vector Store** | [ChromaDB](https://www.trychroma.com/) | In-memory RAG for runbook retrieval |
 | **Linting/Testing**| Ruff / Pytest | Code quality and tool unit tests |
 
@@ -36,4 +36,4 @@ Unlike a standard chatbot that just predicts the next word, this agent follows a
 
 ---
 
-> ⚠️ **Local-First Notice:** This project is designed to run entirely offline. No data ever leaves the `localhost` or internal `192.168.x.x` network.
+> ⚠️ **Local-First Notice:** This project is designed to run entirely offline on your client machine. No data ever leaves `localhost`.
