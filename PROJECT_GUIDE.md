@@ -13,8 +13,8 @@ You are building an **Agent**, not just a Chatbot. A chatbot asks/answers. An Ag
 5.  **Final Answer:** LLM synthesizes the text using that data.
 
 ## 2. Key Resources to Study
-- **[Ollama Tool Calling Docs](https://github.com/ollama/ollama/blob/main/docs/tools.md):** *Critical.* Read how `chat_request.messages[].tool_calls` works in the raw JSON response. This is where your branching logic lives.
-- **[ChromaDB Quickstart (In-Memory)](https://docs.trychroma.com/>:** Look for `chromadb.Client()` vs `chromadb.PersistentClient()`. You want the first one.
+- **[Ollama Tool Calling Docs](https://docs.ollama.com/capabilities/tool-calling#python):** *Critical.* Read how `chat_request.messages[].tool_calls` works in the raw JSON response. This is where your branching logic lives.
+- **[ChromaDB Quickstart (In-Memory)](https://www.trychroma.com/docs/embeddings/overview):** Look for `chromadb.Client()` vs `chromadb.PersistentClient()`. You want the first one.
 - **[LangChain Tool Calling Tutorials](https://python.langchain.com/docs/how_to/#tools):** Even though we aren't using LangChain, their *diagrams* of how agents handle tool outputs are excellent for understanding the pattern.
 
 ## 3. Design Questions to Answer (Notes)
