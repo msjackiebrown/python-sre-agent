@@ -1,0 +1,28 @@
+name: CI/CD Python Tests
+
+on: [push, pull_request]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest # Local runner when available
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest ruff
+          
+      - name: Lint with Ruff
+        run: |
+          ruff check src/
+          
+      - name: Run Unit Tests
+        run: |
+          pytest tests/ -v
