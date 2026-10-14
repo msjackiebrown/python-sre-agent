@@ -2,7 +2,7 @@
 
 ## Project: Python SRE Agent (Tool-Using Chatbot)
 **Goal:** Build a local-first AI assistant that uses Ollama Function Calling to interact with mocked infrastructure tools and a ChromaDB runbook knowledge base.
-**Status:** Phase 2 (Design & Architecture) → Phase 3 (Implementation)
+**Status:** Phase 2 (Data Ingestion) — Get ChromaDB + Runbooks working first
 
 ---
 
@@ -28,15 +28,18 @@
 
 ---
 
-## ⏱️ Phase Gates
+## ⏱️ Phase Gates — Data → Tools → LLM → API → UI
 
-| Phase | Goal | Status |
-| :--- | :--- | :--- |
-| **Phase 1** | Governance & Repo Setup | ✅ Done |
-| **Phase 2** | Define Tool Schemas & Mock Data Schema | 🔄 In Progress |
-| **Phase 3** | Build Agent Loop (Ollama streaming + logic) | ⬜ Pending |
-| **Phase 4** | Integrate ChromaDB Runbook Search Tool | ⬜ Pending |
-| **Phase 5** | CI/CD, Testing & Documentation Polish | ⬜ Pending |
+**Design principle:** Build bottom-up layered architecture. Test each tier independently.
+
+| Phase | Goal | Layer | Status |
+| :--- | :--- | :--- | :--- |
+| **Phase 1** | Governance & Repo Setup | Foundation | ✅ Done |
+| **Phase 2** | Data Ingestion (ChromaDB + Runbook Seeding) | Data Tier | 🔄 In Progress |
+| **Phase 3** | Tool Setup (Pydantic Validation + Tool Schemas) | Business Logic Tier | ⬜ Pending |
+| **Phase 4** | LLM Integration (Agent Loop + Tool Calling) | Application Tier | ⬜ Pending |
+| **Phase 5** | Testing, CI/CD & Documentation Polish | Quality Assurance | ⬜ Pending |
+| **Phase 6** | UI Layer (Streamlit Interface) | Presentation Tier | ⬜ Pending |
 
 ---
 

@@ -33,6 +33,51 @@ Unlike a standard chatbot that just predicts the next word, this agent follows a
 ## 📚 Documentation
 - **[PROJECT_GUIDE.md](./PROJECT_GUIDE.md)**: The architectural blueprint, learning resources, and design questions for this repo.
 - **[AGENTS.md](./AGENTS.md)**: Governance rules, coding standards, and development gates.
+- **[notes/DATABASE-MASTER-GUIDE.md](./notes/DATABASE-MASTER-GUIDE.md)**: ⭐ **START HERE** for database design, testing strategy, and data format.
+
+## 🗄️ Database Layer (Phase 2: Complete ✅)
+
+This project implements a **three-layer architecture** for clean separation of concerns:
+
+| Layer | File | Responsibility | Examples |
+|-------|------|-----------------|----------|
+| **Layer 1: Data Access** | `src/db.py` | Pure CRUD operations on ChromaDB | `add_runbook()`, `search_runbooks()`, `remove_runbook()` |
+| **Layer 2: Business Logic** | `src/tools.py` | Orchestration + validation + file I/O | `seed_runbooks()`, `parse_frontmatter()`, `validate_runbook()` |
+| **Layer 3: Presentation** | `src/main.py` | User input/output (CLI, web, API) | `input()`, `print()` formatted results |
+
+### Data Format: Markdown + YAML Frontmatter
+
+Runbooks stored in `src/data/INCIDENT-*.md` with structured metadata:
+
+```markdown
+---
+id: INCIDENT-001
+title: Database Connection Timeout During Peak Load
+severity: high
+keywords: database connection timeout slow performance
+contact: db-oncall@company.com
+---
+
+## Overview
+Our database connection pool exhausts during peak traffic...
+
+## Root Cause
+...
+
+## Steps to Resolve
+1. Check active connections...
+```
+
+### Testing: 8 Comprehensive Tests
+
+Run with: `python -m pytest tests/test_db.py -v`
+
+- ✅ YAML parsing (normal, missing, empty, multiline)
+- ✅ Runbook seeding (counts, metadata storage)
+- ✅ File type filtering (.md only, ignore .txt/.json)
+- ✅ Edge cases (numeric values, quoted strings)
+
+All tests use **isolated ephemeral ChromaDB instances** — no test pollution.
 
 ---
 

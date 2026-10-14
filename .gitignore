@@ -1,0 +1,93 @@
+# Python Environments
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.local
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ChromaDB (Ephemeral Database)
+*.db
+*.sqlite
+chroma/
+chroma-data/
+
+# Project-Specific
+.env.production
+.env.development
+secrets/
+*.log
+logs/
+
+# OS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-workspace
+Thumbs.db
+desktop.ini
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Node (if you add TypeScript/JS later)
+node_modules/
+npm-debug.log
+
+# Misc
+*.pyc
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+*.pid
+*.pot
+*.mo
