@@ -3,3 +3,5 @@ chromadb
 pydantic
 pyyaml
 pytest
+requests
+streamlit>=1.57

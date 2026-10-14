@@ -161,75 +161,75 @@ def react_agent(user_query: str, max_iterations: int = 5) -> str:
 
 ## 4. Ollama Function Calling Integration (Phase 4 Specifics)
 
-### Ollama's Tool Calling Format
+### Ollama's Direct Function Passing (Recommended)
 
-Ollama returns structured tool calls in JSON format:
+**Ollama introspects Python functions directly** — no need for manual JSON schemas!
 
 ```python
-response = ollama.chat(
+from ollama import chat
+from tools import search_runbooks
+
+# PASS FUNCTION DIRECTLY - Ollama extracts docstring + params automatically
+response = chat(
     model="qwen2.5-7b",
     messages=messages,
-    tools=[
-        {
-            "type": "function",
-            "function": {
-                "name": "search_runbooks",
-                "description": "Search runbooks...",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string"},
-                        "max_results": {"type": "integer"}
-                    },
-                    "required": ["query"]
-                }
-            }
-        }
-    ]
+    tools=[search_runbooks],  # ← Just pass the function!
+    temperature=0.3,
+    stream=False
 )
 
-# Response structure:
-# response = {
-#     'model': 'qwen2.5-7b',
-#     'created_at': '2026-10-14T...',
-#     'message': {
-#         'role': 'assistant',
-#         'content': '...',  # Reasoning (Thought)
-#         'tool_calls': [
-#             {
-#                 'function': 'search_runbooks',
-#                 'arguments': {'query': '...', 'max_results': 5}
+# Response structure (auto-parsed by Ollama):
+# response.message = {
+#     'role': 'assistant',
+#     'content': '...',  # LLM's reasoning (Thought)
+#     'tool_calls': [
+#         {
+#             'function': {
+#                 'name': 'search_runbooks',  # ← From function name
+#                 'arguments': {'query': '...', 'max_results': 5}  # ← Auto-parsed
 #             }
-#         ]
-#     }
+#         }
+#     ]
 # }
 ```
+
+**Why this is cleaner:**
+- ✅ Single source of truth: your function definition
+- ✅ Ollama reads docstring → auto description
+- ✅ Ollama reads parameter types → auto schema
+- ✅ No schema duplication, no drift
+- ✅ Built-in argument parsing + validation
 
 ### Handling Tool Call Responses
 
 ```python
 # Extract tool calls from response
-tool_calls = response.message.get('tool_calls', [])
-
-if tool_calls:
+if response.message.tool_calls:
     # LLM decided to use a tool
-    for tool_call in tool_calls:
-        func_name = tool_call['function']
-        args = tool_call['arguments']
+    for tool_call in response.message.tool_calls:
+        func_name = tool_call.function.name
+        args = tool_call.function.arguments  # ← Auto-parsed by Ollama
         
-        # Call our tool (from tools.py)
-        result = tools.search_runbooks(**args)
+        # Call our tool with auto-parsed arguments
+        try:
+            result = search_runbooks(**args)
+        except Exception as e:
+            result = f"❌ Tool error: {type(e).__name__}: {str(e)}"
         
-        # Add tool result to conversation
+        # Add LLM's thought to messages
+        messages.append({"role": "assistant", "content": response.message.content})
+        
+        # Add tool result using standard "tool" role
         messages.append({
-            "role": "user",
-            "content": f"Tool result from {func_name}: {result}"
+            "role": "tool",
+            "tool_name": func_name,
+            "content": str(result)
         })
     
     # Continue loop: LLM re-evaluates with new information
 else:
     # LLM didn't call tool → it's done reasoning
-    return response.message['content']
+    return response.message.content
 ```
 
 ---
@@ -349,94 +349,94 @@ Escalate after 15min if not resolved
 
 ---
 
-## 8. Pseudocode: `src/agent.py` Structure (Phase 4 Deliverable)
+## 8. Implementation: `src/agent.py` Structure (Phase 4 Deliverable)
+
+**Key difference from pseudocode above:** We pass functions DIRECTLY to Ollama, not JSON schemas!
 
 ```python
-"""src/agent.py — ReAct loop for SRE agent."""
+"""src/agent.py — ReAct loop for SRE agent using Ollama function calling."""
 
 from ollama import chat
-from tools import search_runbooks, SearchRunbooksInput
+from tools import search_runbooks  # ← Just the function, no schema needed!
 from db import seed_runbooks
 
-# Initialize
-collection, _ = seed_runbooks()
-
-SYSTEM_PROMPT = """You are an SRE troubleshooting assistant. 
+SYSTEM_PROMPT = """You are an SRE troubleshooting assistant.
 Help users resolve incidents by searching runbooks and providing clear, 
 actionable steps.
 
 When a user reports an issue:
-1. Think: What is the core problem?
-2. Act: Search runbooks for relevant procedures
-3. Observe: What runbooks matched?
-4. Reason: How should I present this to the user?
+1. THINK: What is the core problem?
+2. ACT: Search runbooks for relevant procedures
+3. OBSERVE: What runbooks matched?
+4. REASON: How should I present this?
 
-Focus on clarity, safety (no destructive actions without warning), 
-and escalation paths (who to page if unresolved)."""
+Focus on clarity, safety, and escalation paths."""
 
-def react_agent(user_query: str, max_iterations: int = 5) -> str:
-    """Main ReAct loop implementation."""
+def react_agent(user_query: str, max_iterations: int = 5, verbose: bool = False) -> str:
+    """ReAct loop for SRE troubleshooting."""
     
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_query}
     ]
     
-    available_tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "search_runbooks",
-                "description": "Search runbooks for troubleshooting steps...",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string", "description": "Search keywords"},
-                        "max_results": {"type": "integer", "default": 5}
-                    },
-                    "required": ["query"]
-                }
-            }
-        }
-    ]
-    
     iteration = 0
     while iteration < max_iterations:
         iteration += 1
         
-        # LLM thinks & decides
+        if verbose:
+            print(f"Iteration {iteration}/{max_iterations}")
+        
+        # Pass function DIRECTLY - Ollama introspects docstring + params
         response = chat(
             model="qwen2.5-7b",
             messages=messages,
-            tools=available_tools,
+            tools=[search_runbooks],  # ← No JSON schema needed!
             temperature=0.3,
             stream=False
         )
         
-        # Check if done
-        if not response.message.get('tool_calls'):
-            return response.message['content']
+        # Check if LLM decided to use tools
+        if not response.message.tool_calls:
+            # No tool call = LLM is done reasoning
+            return response.message.content
         
         # Execute tools
-        for tool_call in response.message['tool_calls']:
-            name = tool_call['function']
-            args = tool_call['arguments']
+        for tool_call in response.message.tool_calls:
+            func_name = tool_call.function.name
+            args = tool_call.function.arguments  # ← Auto-parsed!
             
+            # Execute tool
             try:
                 result = search_runbooks(**args)
             except Exception as e:
-                result = f"❌ Tool error: {e}"
+                result = f"❌ Tool error: {type(e).__name__}: {str(e)}"
             
-            messages.append({"role": "assistant", "content": response.message['content']})
-            messages.append({"role": "user", "content": result})
+            # Add to message history using standard Ollama format
+            messages.append({"role": "assistant", "content": response.message.content})
+            messages.append({
+                "role": "tool",
+                "tool_name": func_name,
+                "content": str(result)
+            })
     
-    return f"⚠️ Max iterations reached. Last response: {response.message['content']}"
+    # Max iterations reached
+    return f"⚠️ Max iterations ({max_iterations}) reached. Last response: {response.message.content}"
 
 if __name__ == "__main__":
     query = "Database connection pool exhausted, 500 errors"
-    answer = react_agent(query)
+    answer = react_agent(query, verbose=True)
     print(answer)
 ```
+
+**What's different from traditional function calling:**
+- ✅ NO hardcoded JSON schemas
+- ✅ NO schema duplication or drift
+- ✅ Ollama reads your function's docstring for description
+- ✅ Ollama reads parameter types + annotations for schema
+- ✅ Arguments auto-parsed by Ollama (type-safe)
+- ✅ Cleaner message format with `"role": "tool"`
+- ✅ Much easier to add new tools (just define function + docstring)
 
 ---
 
