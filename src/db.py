@@ -9,6 +9,8 @@ Why this separation?
 - Tests stay simple: test storage logic independently from file I/O
 """
 import chromadb
+import yaml
+from pathlib import Path
 
 
 def init_collection(collection_name: str = "runbooks", space: str = "cosine") -> tuple:
@@ -130,3 +132,122 @@ def remove_runbook(collection, runbook_id: str) -> bool:
 def count_runbooks(collection) -> int:
     """Return number of runbooks in the collection."""
     return collection.count()
+
+
+# ============================================================================
+# PHASE 2: RUNBOOK LOADING — Parse markdown + bulk ingest
+# ============================================================================
+
+def parse_frontmatter(markdown: str) -> dict:
+    """Extract YAML frontmatter from markdown document.
+    
+    Args:
+        markdown: Markdown text with optional YAML frontmatter block
+        
+    Returns:
+        Dictionary of frontmatter key-value pairs, or {} if not found/empty
+        
+    Example:
+        >>> md = '''---
+        ... id: INCIDENT-001
+        ... title: Database Timeout
+        ... ---
+        ... Body text'''
+        >>> parse_frontmatter(md)
+        {'id': 'INCIDENT-001', 'title': 'Database Timeout'}
+    """
+    if not markdown.startswith("---"):
+        return {}
+    
+    # Find the closing --- marker
+    parts = markdown.split("---", 2)
+    if len(parts) < 3:
+        return {}
+    
+    frontmatter_block = parts[1].strip()
+    if not frontmatter_block:
+        return {}
+    
+    try:
+        return yaml.safe_load(frontmatter_block) or {}
+    except yaml.YAMLError:
+        return {}
+
+
+def seed_runbooks(
+    data_dir: str = "src/data",
+    collection_name: str = "runbooks"
+) -> tuple:
+    """Load all markdown runbooks from directory into ChromaDB collection.
+    
+    Args:
+        data_dir: Directory containing .md runbook files
+        collection_name: Name of the ChromaDB collection to create/use
+        
+    Returns:
+        Tuple of (collection, count) where count is number of runbooks seeded
+        
+    Example:
+        >>> collection, count = seed_runbooks("src/data")
+        >>> print(f"Loaded {count} runbooks")
+        Loaded 7 runbooks
+    """
+    # Initialize collection
+    _, collection = init_collection(collection_name=collection_name)
+    
+    # Discover all .md files
+    data_path = Path(data_dir)
+    if not data_path.exists():
+        return (collection, 0)
+    
+    md_files = sorted(data_path.glob("*.md"))
+    
+    # Load and ingest each file
+    runbooks = []
+    for filepath in md_files:
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Extract frontmatter for metadata
+        metadata = parse_frontmatter(content)
+        if not metadata or "id" not in metadata:
+            continue  # Skip files without valid frontmatter + id
+        
+        runbook_id = metadata["id"]
+        runbooks.append({
+            "id": runbook_id,
+            "document": content,
+            "metadata": metadata
+        })
+    
+    # Bulk add to ChromaDB
+    if runbooks:
+        add_runbooks_batch(collection, runbooks)
+    
+    return (collection, len(runbooks))
+
+
+# ============================================================================
+# MODULE ENTRY POINT — Test seeding at module run
+# ============================================================================
+
+if __name__ == "__main__":
+    print("🚀 Phase 2: Data Ingestion - Testing ChromaDB + Runbook Seeding")
+    print("=" * 70)
+    
+    # Load all runbooks from src/data
+    collection, count = seed_runbooks()
+    print(f"✅ Seeded {count} runbooks into ChromaDB (cosine similarity)")
+    
+    # Test search
+    if count > 0:
+        print(f"\n📚 Collection contains {count_runbooks(collection)} runbooks")
+        
+        # Try a sample search
+        sample_query = "database timeout connection pool"
+        results = search_runbooks(collection, query=sample_query, n_results=2)
+        print(f"\n🔍 Test search: '{sample_query}'")
+        for r in results:
+            print(f"  - {r['id']} ({r['severity']}): {r['distance']:.3f}")
+    else:
+        print("⚠️  No runbooks found in src/data. Check data files exist with frontmatter.")

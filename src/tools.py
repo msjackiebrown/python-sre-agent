@@ -1,4 +1,21 @@
 from pydantic import BaseModel, Field, ValidationError
+from db import init_collection, add_runbooks_batch, search_runbooks as db_search
+
+# ============================================================================
+# GLOBAL STATE: Initialize ChromaDB collection at module import
+# ============================================================================
+
+_collection = None
+
+
+def _get_collection():
+    """Lazy-load ChromaDB collection (singleton pattern)."""
+    global _collection
+    if _collection is None:
+        from db import seed_runbooks
+        _collection, _ = seed_runbooks()
+    return _collection
+
 
 # ============================================================================
 # VALIDATION: Pydantic models for tool arguments
@@ -50,8 +67,23 @@ def search_runbooks(query: str, max_results: int = 5) -> str:
         error_msg = e.errors()[0]['msg'] if e.errors() else "Validation failed"
         return f"❌ Invalid arguments: {error_msg}"
     
-    # TODO: Query ChromaDB with validated.query
-    # TODO: Return formatted results from validated.max_results runbooks
+    # Query ChromaDB with validated inputs
+    collection = _get_collection()
+    results = db_search(
+        collection=collection,
+        query=validated.query,
+        n_results=validated.max_results
+    )
     
-    # Placeholder implementation
-    return f"🔍 Searching for: '{validated.query}' (max {validated.max_results} results)\n\nNo matching runbook found"
+    # Format results for LLM consumption
+    if not results:
+        return f"❌ No matching runbooks found for: '{validated.query}'"
+    
+    # Build formatted response with runbook summaries
+    response = f"✅ Found {len(results)} matching runbooks for: '{validated.query}'\n\n"
+    for i, result in enumerate(results, 1):
+        response += f"**{i}. {result['id']} — {result['title']}**\n"
+        response += f"   Severity: {result['severity']} | Match score: {1 - result['distance']:.2f}\n"
+        response += f"   Preview: {result['document_preview']}\n\n"
+    
+    return response

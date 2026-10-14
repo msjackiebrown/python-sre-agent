@@ -1,2 +1,5 @@
 ollama
 chromadb
+pydantic
+pyyaml
+pytest
