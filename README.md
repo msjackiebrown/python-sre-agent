@@ -1,405 +1,207 @@
-# 🤖 Python SRE Agent: AI-Powered Incident Troubleshooting
+# 🤖 Python SRE Agent
 
-> **Enterprise-Grade Tool-Using AI Agent | Local-First Deployment | ReAct Pattern Implementation**
+> **Local-First AI Agent | ReAct Pattern | Tool Calling + RAG**
 
-An **agentic AI system** that reasons through operational incidents, searches a knowledge base of runbooks, and returns actionable solutions—all running locally without cloud dependencies. This is not a chatbot. It's a **decision-making loop** powered by function calling and retrieval-augmented generation (RAG).
+An **agentic AI system** that uses a Reason→Act→Observe loop to troubleshoot operational incidents, search a runbook knowledge base, and deliver actionable solutions—all on your laptop, no cloud required.
 
-**Portfolio Highlights:**
-- ✅ **ReAct Pattern**: Reason → Act → Observe cycle for reliable tool calling
-- ✅ **Streaming UI**: Streamlit chat interface with proper UX (chronological message flow)
-- ✅ **Type-Safe**: Pydantic validation on all tool inputs; type hints throughout
-- ✅ **Testable**: Mocked Ollama; ChromaDB operations tested independently
-- ✅ **Layered Architecture**: Clean separation of Data/Business/Presentation tiers
-- ✅ **OpenAI-Compatible API**: Works with local OR remote Ollama instances
+**What makes this portfolio-ready:**
+- ✅ **ReAct Loop:** Reduces LLM hallucination by grounding answers in real tool results
+- ✅ **Function Calling:** LLM safely invokes Python functions via OpenAI-compatible API
+- ✅ **Retrieval-Augmented Generation:** Semantic search over incident runbooks
+- ✅ **Layered Architecture:** Clean separation of Data/Business/UI tiers
+- ✅ **Type-Safe:** Pydantic validation + type hints throughout
+- ✅ **Tested:** 23 unit + integration tests; mocked external dependencies
+- ✅ **Production-Ready UI:** Streamlit chat interface with proper UX
 
 ---
 
 ## ⚡ Quick Start (5 minutes)
 
-**Requirements:** 8GB+ RAM, Python 3.10+
-
 ```bash
-# 1. Clone & install
-git clone <repo>
-cd python-sre-agent
+# 1. Install
 pip install -r requirements.txt
 
-# 2. Run Ollama (if not already running)
+# 2. Run Ollama (separate terminal)
 ollama run qwen2.5:7b
 
-# 3. Start the UI
+# 3. Start UI
 streamlit run src/main.py
+# Opens http://localhost:8501
 ```
 
 **For remote Ollama:**
 ```bash
-export OLLAMA_HOST=http://api.your-server.com:11434
+export OLLAMA_HOST=http://your-server:11434
 streamlit run src/main.py
 ```
 
-Open browser to **`http://localhost:8501`** and start typing incidents.
+---
+
+## 📖 Documentation
+
+| Document | Purpose |
+|----------|---------|
+| **[docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md)** | Installation, setup, first run |
+| **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** | System design, ReAct loop, 3-tier model |
+| **[docs/DESIGN_DECISIONS.md](./docs/DESIGN_DECISIONS.md)** | Why each tech choice (with trade-offs) |
+| **[docs/API.md](./docs/API.md)** | Programmatic usage, function signatures |
+| **[docs/TESTING.md](./docs/TESTING.md)** | Test strategy, how to run tests |
+| **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** | Docker, Kubernetes, cloud platforms |
 
 ---
 
-## 🏗️ How It Works: The ReAct Loop
+## 🎯 Project at a Glance
 
+**Tech Stack:**
+- **LLM:** Ollama + Qwen 2.5-7B (4.7GB)
+- **Vector DB:** ChromaDB (in-memory, ephemeral)
+- **UI:** Streamlit
+- **Validation:** Pydantic v2
+- **Language:** Python 3.10+ (typed)
+
+**Architecture:**
 ```
-User: "Database connection timeouts"
-       ↓
-LLM (Thinking): "This is a database issue. I should search runbooks."
-       ↓
-Tool Call: search_runbooks(query="database timeout", max_results=3)
-       ↓
-ChromaDB Search: Returns [INCIDENT-001, INCIDENT-003, INCIDENT-006]
-       ↓
-LLM (Synthesis): "Found 3 relevant runbooks. Let me explain the solution..."
-       ↓
-Response: Formatted runbook details + escalation paths + next steps
-```
-
-**Why ReAct matters:** Instead of hallucinating answers, the LLM:
-1. **Reasons** about what information is needed
-2. **Acts** by calling specific tools (search, validate, fetch)
-3. **Observes** real results from those tools
-4. **Iterates** up to 5 times to refine the answer
-
-This dramatically reduces hallucinations and grounds answers in actual data.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **LLM Engine** | [Ollama](https://ollama.com/) (Local) | Runs on consumer hardware; no cloud API calls; full control |
-| **Model** | Qwen 2.5-7B (4.7 GB) | Perfect for GitHub + recruiter testing; Qwen 3.8-27B for advanced reasoning |
-| **Vector DB** | ChromaDB (In-Memory) | Zero persistence overhead; ephemeral per session; ideal for portfolio projects |
-| **Web UI** | Streamlit 1.57+ | Fast iteration; built-in session state; production-ready deployment |
-| **Validation** | Pydantic v2 | Type-safe tool arguments; automatic JSON schema generation |
-| **Testing** | Pytest | Mock Ollama; test tools independently from LLM |
-| **Language** | Python 3.10+ | Type hints throughout; modern async-ready patterns |
-
----
-
-## 🎯 Architecture: Three Tiers
-
-This project follows **layered architecture**—a hallmark of professional systems:
-
-### **Tier 1: Data Access** (`src/db.py`)
-Pure CRUD operations on ChromaDB. Zero business logic.
-```python
-def add_runbook(collection, runbook_id, document, metadata) → bool
-def search_runbooks(collection, query, n_results=3) → list[dict]
-def seed_runbooks(data_dir="src/data") → tuple[Collection, int]
+Layer 3: Streamlit UI (src/main.py)
+    ↓
+Layer 2: ReAct Agent (src/agent.py) + Tools (src/tools.py)
+    ↓
+Layer 1: Database (src/db.py) + ChromaDB
 ```
 
-### **Tier 2: Business Logic** (`src/tools.py`)
-Orchestration, validation, file parsing. Knows about Pydantic models and domain rules.
-```python
-class SearchRunbooksInput(BaseModel):
-    query: str = Field(..., min_length=3, max_length=100)
-    max_results: int = Field(5, ge=1, le=20)
+**Current Status:**
+- Phase 2 (Data) ✅ — 8/8 tests passing
+- Phase 3 (Tools) ✅ — 15/15 tests passing  
+- Phase 4 (LLM + UI) ✅ — Manual testing complete
+- Phase 5 (Scaling) 🔄 — Planned
 
-def search_runbooks(query: str, max_results: int = 5) → str
+---
+
+## 🤔 Common Questions
+
+**Why ReAct instead of just prompting the LLM?**
+→ Reduces hallucinations by making the LLM search real data before answering.
+
+**Why Qwen 2.5-7B?**
+→ Fits on recruiter laptops (8GB RAM), tool calling works great, inference is fast (~50 tok/sec).
+
+**Why ChromaDB and not Pinecone?**
+→ Portfolio projects should "just work" locally. Zero infrastructure, zero API keys.
+
+**How does function calling work?**
+→ Ollama introspects your Python function (docstring, parameters), generates JSON schema, intercepts LLM's tool calls, validates with Pydantic, executes.
+
+**How do you test without Ollama running?**
+→ Mock the `ollama.chat()` function. Tools are tested independently via unit tests.
+
+**For production, what would you change?**
+→ FastAPI instead of Streamlit. Persistent vector DB (Weaviate/Pinecone). Async/concurrent tool calls. Monitoring/logging. See [DEPLOYMENT.md](./docs/DEPLOYMENT.md).
+
+---
+
+## 📁 Files
+
 ```
+src/
+├── agent.py        # ReAct loop orchestrator + Ollama connection
+├── main.py         # Streamlit UI
+├── tools.py        # search_runbooks() + Pydantic validation
+├── db.py           # ChromaDB CRUD operations
+└── data/           # 7 sample incident runbooks (INCIDENT-*.md)
 
-### **Tier 3: Presentation** (`src/agent.py` + `src/main.py`)
-- **agent.py**: ReAct loop orchestrator (LLM + tool coordination)
-- **main.py**: Streamlit UI (user input/output)
+tests/
+├── test_db.py      # Data layer (8 tests)
+├── test_tools.py   # Business logic (15 tests)
+└── conftest.py     # Pytest fixtures
 
-**The Golden Rule:** Each tier only calls the tier below it. Never skip layers.
-
----
-
-## 📊 Project Status
-
-| Phase | Component | Status | Tests |
-|-------|-----------|--------|-------|
-| **2** | Data Ingestion (ChromaDB + Runbooks) | ✅ Complete | 8/8 PASS |
-| **3** | Tool Setup (Pydantic + Validation) | ✅ Complete | 15/15 PASS |
-| **4** | LLM Integration (ReAct Loop + UI) | ✅ Complete | Manual ✓ |
-| **5** | API & Optimization | 🔄 Planned | — |
-
-### Data Format: Markdown + YAML Frontmatter
-
-Runbooks stored in `src/data/INCIDENT-*.md` with structured metadata:
-
-```markdown
----
-id: INCIDENT-001
-title: Database Connection Timeout During Peak Load
-severity: high
-keywords: database, connection, timeout, pool, exhaustion
-contact: db-oncall@company.com
----
-
-## Overview
-When traffic spikes, the application's connection pool exhausts...
-
-## Root Cause
-Insufficient pool size or slow query responses upstream...
-
-## Resolution Steps
-1. SSH into the database server
-2. Check active connections: `SELECT count(*) FROM pg_stat_activity`
-3. Adjust pool settings in the application config
-4. Monitor for recovery within 2 minutes
+docs/               # Detailed documentation (you are here!)
+notes/              # Learning materials (for your reference, not recruiters)
 ```
 
 ---
 
-## 🧪 Testing & Code Quality
+## 🚀 Running
 
-### Test Coverage
-Run tests with:
-```bash
-pytest tests/ -v
-```
-
-**Test Results:**
-- ✅ **Data Layer** (`test_db.py`): 8/8 PASS
-  - YAML frontmatter parsing (normal, missing, empty, multiline values)
-  - Runbook seeding (counts, metadata, file type filtering)
-  - Edge cases (numeric values, quoted strings)
-
-- ✅ **Business Logic** (`test_tools.py`): 15/15 PASS
-  - Pydantic validation (boundaries, required fields, type coercion)
-  - Error handling (invalid input, no results, tool failures)
-  - Integration tests (mocked + real ChromaDB operations)
-
-**Test Philosophy:** Mocked Ollama for tool testing; tools never depend on running LLM.
-
-### Type Safety
-```bash
-# All files use type hints
-python -m mypy src/
-```
-
-**Key patterns:**
-- Pydantic `BaseModel` for input validation
-- Return type annotations on all functions
-- `type: ignore` only where necessary (with comments)
-
----
-
-## 🔌 Ollama Integration: OpenAI-Compatible API
-
-This agent uses Ollama's OpenAI-compatible REST API, which means:
-
-**Local Setup:**
-```bash
-ollama run qwen2.5:7b
-# Creates HTTP endpoint at http://localhost:11434
-```
-
-**Remote Setup:**
-```bash
-export OLLAMA_HOST=http://api.your-server.com:11434
-export OLLAMA_MODEL=qwen2.5:7b
-streamlit run src/main.py
-```
-
-The `ollama` Python library respects `OLLAMA_HOST` environment variable automatically—no code changes needed.
-
-### Function Calling Flow
-```
-1. Agent calls: chat(model="qwen2.5:7b", tools=[search_runbooks], ...)
-2. Ollama introspects search_runbooks() function:
-   - Docstring → tool description
-   - Parameters → JSON schema
-3. LLM decides to call: {"function": "search_runbooks", "arguments": {...}}
-4. Python intercepts, validates with Pydantic, executes
-5. Result injected back into conversation history
-6. LLM synthesizes final answer grounded in real data
-```
-
----
-
-## 💡 Key Design Decisions
-
-### 1. **Model Selection: Qwen 2.5-7B for Portfolio**
-- ✅ Runs on 8GB consumer hardware (recruiter-friendly)
-- ✅ Fast inference (50+ tokens/sec on CPU)
-- ✅ Tool calling reliability matches larger models
-- 📺 Optional: Use Qwen 3.8-27B for YouTube demo (visible reasoning)
-
-**Rationale:** Recruiters will clone and test this. Make it "just works."
-
-### 2. **Ephemeral ChromaDB (No Persistence)**
-- ✅ Zero external dependencies (no database server)
-- ✅ Session scoped (clean state per run)
-- ✅ Perfect for portfolio projects (no DevOps overhead)
-- 🏭 Production: Use persistent ChromaDB or vector database
-
-### 3. **Layered Architecture**
-Strictly enforced:
-```
-Streamlit UI  →  ReAct Agent  →  Pydantic Tools  →  ChromaDB
-    (Layer 3)      (Layer 3)        (Layer 2)       (Layer 1)
-```
-
-**Benefit:** Easy to swap layers. Replace Streamlit with FastAPI; replace ChromaDB with Pinecone—without touching agent logic.
-
-### 4. **Type Hints Everywhere**
-```python
-def react_agent(user_query: str, max_iterations: int = 5, verbose: bool = False) → str:
-    """Reason → Act → Observe loop with safety bounds."""
-```
-
-**Benefit:** Self-documenting code. Enables IDE autocomplete and type checking.
-
-### 5. **Offline-First, No Cloud APIs**
-- ✅ Ollama runs locally
-- ✅ ChromaDB in-memory
-- ✅ All computation stays on localhost
-- 🎯 Perfect for portfolio: Shows you understand privacy and deployment constraints
-
----
-
-## 📁 Project Structure
-
-```
-python-sre-agent/
-├── src/
-│   ├── agent.py          # ReAct loop + Ollama connection
-│   ├── main.py           # Streamlit UI
-│   ├── tools.py          # Search_runbooks + Pydantic validation
-│   ├── db.py             # ChromaDB CRUD operations
-│   └── data/
-│       ├── INCIDENT-001.md  # Sample runbooks (7 total)
-│       └── ...
-├── tests/
-│   ├── test_db.py        # Data layer tests (8 tests)
-│   ├── test_tools.py     # Business logic tests (15 tests)
-│   └── conftest.py       # Pytest fixtures
-├── notes/                # Portfolio preparation docs (not for recruiters)
-│   ├── REACT-PATTERN.md
-│   ├── OLLAMA-API-REFERENCE.md
-│   ├── layered-architecture-pattern.md
-│   └── ...
-├── requirements.txt
-├── README.md
-├── AGENTS.md             # Coding standards + governance
-└── PROJECT_GUIDE.md      # Architecture deep-dive
-```
-
----
-
-## 🚀 Running the Agent
-
-### Option 1: Interactive Chat UI (Recommended)
+### Web UI (Recommended)
 ```bash
 streamlit run src/main.py
+# Chat interface at http://localhost:8501
 ```
-Opens a browser to `http://localhost:8501` with a chat interface.
 
-**Features:**
-- ✅ Chronological message display (newest at bottom, like Slack)
-- ✅ Connection status in sidebar
-- ✅ Clear conversation history button
-- ✅ Expandable help panels
-- ✅ Auto-scrolls to new messages
-
-### Option 2: Direct Agent Loop (Testing/Debugging)
+### CLI (Debug)
 ```bash
 python src/agent.py
+# Runs 3 test queries with verbose output
 ```
 
-Runs 3 test queries through the ReAct agent and prints verbose iteration info.
-
-### Option 3: Programmatic Use
+### Python API
 ```python
-from agent import react_agent
-
-response = react_agent("Database connection timeouts", max_iterations=5, verbose=True)
+from src.agent import react_agent
+response = react_agent("Database timeout")
 print(response)
 ```
 
 ---
 
-## 🧠 How the Agent Reasons
+## 🧪 Testing
 
-Example trace with `verbose=True`:
+```bash
+# Run all tests
+pytest tests/ -v
 
-```
-🔄 Iteration 1/5
-   LLM Response: I should search for runbooks about database issues...
-   → Tool call: search_runbooks(query='database timeout', max_results=3)
-   ← Result: ✅ Found 3 runbooks (IDs: 001, 003, 006)
+# Expected: 23 passed
 
-🔄 Iteration 2/5
-   LLM Response: These runbooks cover connection pools and timeout settings.
-   Let me format the solution for the user...
-   
-   → No more tool calls. Returning final answer.
+# Data layer only
+pytest tests/test_db.py -v
 
-🤖 Agent Response:
-I found 3 runbooks related to database timeouts. Here are the key steps...
-[Full runbook details with severity, escalation, next steps]
+# Business logic only
+pytest tests/test_tools.py -v
 ```
 
-The agent will iterate up to 5 times, searching for more information or refining answers based on tool results.
+---
+
+## 🔒 Security & Privacy
+
+- ✅ No cloud APIs (data stays on localhost)
+- ✅ No API keys needed
+- ✅ No external authentication
+- ✅ Ephemeral data (cleared on exit)
+- ✅ Type validation prevents injection
+
+Perfect for enterprise + compliance.
 
 ---
 
-## 🔐 Security & Privacy
+## 📚 Learning Path
 
-- ✅ **No cloud APIs**: All data stays on localhost
-- ✅ **No API keys**: No external credentials needed
-- ✅ **No persistence**: Session data cleared on exit
-- ✅ **Mocked data**: All runbooks are synthetic (no real PII)
-- ✅ **Type validation**: Pydantic ensures safe tool arguments
-
-Perfect for enterprise demonstrations without compliance concerns.
-
----
-
-## 📚 Documentation
-
-- **[AGENTS.md](./AGENTS.md)**: Project governance, coding standards, development gates
-- **[PROJECT_GUIDE.md](./PROJECT_GUIDE.md)**: Architecture blueprint, design patterns, learning resources
-- **[notes/OLLAMA-API-REFERENCE.md](./notes/OLLAMA-API-REFERENCE.md)**: Ollama REST API reference (curl + Python)
-- **[notes/REACT-PATTERN.md](./notes/REACT-PATTERN.md)**: Deep dive into the ReAct pattern
-- **[notes/layered-architecture-pattern.md](./notes/layered-architecture-pattern.md)**: Why and how to structure your code in 3 tiers
+1. **Start here:** [GETTING_STARTED.md](./docs/GETTING_STARTED.md)
+2. **Understand the design:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+3. **Learn why we chose each tech:** [DESIGN_DECISIONS.md](./docs/DESIGN_DECISIONS.md)
+4. **Use as a library:** [API.md](./docs/API.md)
+5. **Write tests:** [TESTING.md](./docs/TESTING.md)
+6. **Deploy:** [DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ---
 
-## 🤔 Interview Questions You Should Be Ready For
+## 💡 Interview Prep
 
-### Architecture
-- *"Why a ReAct loop instead of just asking the LLM?"* → Reduces hallucinations by grounding in tool results
-- *"Why ChromaDB and not Pinecone?"* → Portfolio projects should run locally; Pinecone for production
-- *"Why separate db.py from tools.py?"* → Layered architecture; each tier has one job
+You should be ready to explain:
+- ✅ What is the ReAct pattern and why does it help?
+- ✅ How does Ollama's function calling work?
+- ✅ Why this 3-tier architecture?
+- ✅ Why Pydantic for validation?
+- ✅ How to test without external dependencies?
+- ✅ Trade-offs: local vs. cloud, ephemeral vs. persistent, etc.
 
-### Ollama & LLMs
-- *"How does function calling work?"* → Ollama introspects Python functions, generates JSON schema, intercepts tool calls
-- *"Why Qwen 2.5-7B?"* → Recruiter hardware constraints; fast inference; tool calling reliability
-- *"How would you handle a tool failure?"* → Catch exception, return error string, LLM retries or explains failure
-
-### Testing & Code Quality
-- *"How do you test without a running Ollama?"* → Mock the ollama.chat() function in unit tests
-- *"What if a tool returns unexpected data?"* → Pydantic validation + explicit error messages
-- *"How would you scale this?"* → FastAPI instead of Streamlit; Redis for session management; persistent vector DB
-
----
-
-## 🎯 Next Steps & Phase 5
-
-**Planned enhancements:**
-- FastAPI wrapper for API-first deployment
-- Performance optimization (batching, async)
-- Extended runbook library (20+ incidents)
-- Metrics & logging (response time, tool call success rate)
-- Kubernetes deployment examples
+All answers are documented in the `docs/` folder.
 
 ---
 
 ## 📝 License
 
-This project is provided as-is for portfolio demonstration purposes.
+Portfolio demonstration project. Use freely for learning.
 
 ---
 
-## 👤 Author
+**Next:** Read [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md) to install and run.
 
-**Note:** This is a demonstration project showcasing modern LLM patterns (ReAct, tool calling, RAG) and clean software architecture for SRE automation. Built with a focus on local-first deployment and interview readiness.
+**Questions?** Check [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for deep dives, or [docs/DESIGN_DECISIONS.md](./docs/DESIGN_DECISIONS.md) for the "why" behind each choice.
