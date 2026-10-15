@@ -42,10 +42,10 @@ def check_ollama_connection() -> bool:
     """Verify Ollama is running and accessible via OpenAI-compatible API.
     
     Returns:
-        True if connected, False otherwise
+        True if connected
         
     Raises:
-        ConnectionError with helpful message if Ollama isn't running
+        ConnectionError: If Ollama is not running or unreachable
     """
     try:
         # Use OpenAI-compatible /api/tags endpoint (works for any Ollama instance)
