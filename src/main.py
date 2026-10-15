@@ -63,13 +63,22 @@ st.sidebar.title("⚙️ Configuration")
 st.sidebar.write(f"**Ollama URL:** `{OLLAMA_HOST}`")
 st.sidebar.write(f"**Model:** `{OLLAMA_MODEL}`")
 
-# Connection status
-try:
-    check_ollama_connection()
-    ensure_model_available(OLLAMA_MODEL)
+# Initialize connection status in session state (run once per session, not per rerun)
+if "ollama_connected" not in st.session_state:
+    try:
+        check_ollama_connection()
+        ensure_model_available(OLLAMA_MODEL)
+        st.session_state.ollama_connected = True
+        st.session_state.connection_error = None
+    except Exception as e:
+        st.session_state.ollama_connected = False
+        st.session_state.connection_error = str(e)
+
+# Display cached connection status
+if st.session_state.ollama_connected:
     st.sidebar.success("✅ Connected to Ollama")
-except Exception as e:
-    st.sidebar.error(f"❌ Connection Error\n\n{str(e)}")
+else:
+    st.sidebar.error(f"❌ Connection Error\n\n{st.session_state.connection_error}")
     st.stop()
 
 st.sidebar.divider()
